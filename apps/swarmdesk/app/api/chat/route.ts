@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const client = await MemForksClient.connect({
     treeId: process.env.MEMFORK_TREE_ID as string,
     signer: process.env.MEMFORK_PRIVATE_KEY as string,
-    network: process.env.MEMFORK_NETWORK as string,
+    network: (process.env.MEMFORK_NETWORK || "testnet") as "testnet" | "mainnet",
     memwal: {
       accountId: process.env.MEMFORK_MEMWAL_ACCOUNT as string,
       delegateKey: process.env.MEMFORK_MEMWAL_KEY as string,
