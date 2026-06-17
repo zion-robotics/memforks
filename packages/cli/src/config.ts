@@ -23,25 +23,31 @@
  * Plugins and hooks call the CLI binary and never read credentials themselves.
  */
 
-import fs from "node:fs";
-import path from "node:path";
-import os from "node:os";
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
 // ─── Public network constants ─────────────────────────────────────────────────
 // Sources: https://docs.memwal.ai/contract/overview
 
 export const MEMWAL_CONSTANTS = {
   testnet: {
-    packageId:         "0xcf6ad755a1cdff7217865c796778fabe5aa399cb0cf2eba986f4b582047229c6",
-    memforksPackageId: "0xc9f0a4964f810c794479bc5b66347998969d2c59d6797c313b8a96d2bdd6a914",
-    registryId:        "0xe80f2feec1c139616a86c9f71210152e2a7ca552b20841f2e192f99f75864437",
-    relayer:           "https://relayer.staging.memwal.ai",
+    packageId:
+      '0xcf6ad755a1cdff7217865c796778fabe5aa399cb0cf2eba986f4b582047229c6',
+    memforksPackageId:
+      '0x185e765a4979fb9d9089374f822485c88b9d0b2f91f9b1313a73043d5ef2357f',
+    registryId:
+      '0xe80f2feec1c139616a86c9f71210152e2a7ca552b20841f2e192f99f75864437',
+    relayer: 'https://relayer-staging.memory.walrus.xyz',
   },
   mainnet: {
-    packageId:         "0xcee7a6fd8de52ce645c38332bde23d4a30fd9426bc4681409733dd50958a24c6",
-    memforksPackageId: "0x7df9719d799386d34d657c49ae8cd6f5f03b39036f7c428b556095e42afd852f",
-    registryId:        "0x0da982cefa26864ae834a8a0504b904233d49e20fcc17c373c8bed99c75a7edd",
-    relayer:           "https://relayer.memwal.ai",
+    packageId:
+      '0xcee7a6fd8de52ce645c38332bde23d4a30fd9426bc4681409733dd50958a24c6',
+    memforksPackageId:
+      '0xc13cc014fb8084b3468f6e5ffdc272e64ef35b7a912332eba7a0d44dd66b3121',
+    registryId:
+      '0x0da982cefa26864ae834a8a0504b904233d49e20fcc17c373c8bed99c75a7edd',
+    relayer: 'https://relayer.memory.walrus.xyz',
   },
 } as const;
 
@@ -51,13 +57,15 @@ export interface ProjectConfig {
   /** Sui MemoryTree object ID. */
   treeId?: string;
   /** Sui network. Default: "mainnet". */
-  network?: "testnet" | "mainnet" | "devnet" | "localnet";
+  network?: 'testnet' | 'mainnet' | 'devnet' | 'localnet';
   /** Default branch name. Default: "main". */
   defaultBranch?: string;
   /** Override Sui RPC URL. */
   rpcUrl?: string;
   /** Override package ID (post-upgrade). */
   packageId?: string;
+  /** Gas sponsor URL. When set, all on-chain txs are sponsored (no SUI balance needed). */
+  sponsorUrl?: string;
 }
 
 export interface TreeCredential {
@@ -84,7 +92,7 @@ export interface ResolvedConfig {
   memwalAccountId: string;
   memwalKey: string;
   memwalRelayer: string;
-  network: "testnet" | "mainnet" | "devnet" | "localnet";
+  network: 'testnet' | 'mainnet' | 'devnet' | 'localnet';
   defaultBranch: string;
   rpcUrl?: string;
   packageId?: string;
@@ -93,13 +101,15 @@ export interface ResolvedConfig {
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
-function defaultRelayer(network: ResolvedConfig["network"]): string {
-  return MEMWAL_CONSTANTS[network as keyof typeof MEMWAL_CONSTANTS]?.relayer
-    ?? MEMWAL_CONSTANTS.mainnet.relayer;
+function defaultRelayer(network: ResolvedConfig['network']): string {
+  return (
+    MEMWAL_CONSTANTS[network as keyof typeof MEMWAL_CONSTANTS]?.relayer ??
+    MEMWAL_CONSTANTS.mainnet.relayer
+  );
 }
 
 export function projectConfigPath(cwd = process.cwd()): string {
-  return path.join(cwd, ".memfork", "config.json");
+  return path.join(cwd, '.memfork', 'config.json');
 }
 
 /**
@@ -109,7 +119,7 @@ export function projectConfigPath(cwd = process.cwd()): string {
 function findProjectConfigPath(cwd = process.cwd()): string | null {
   let dir = cwd;
   while (true) {
-    const candidate = path.join(dir, ".memfork", "config.json");
+    const candidate = path.join(dir, '.memfork', 'config.json');
     if (fs.existsSync(candidate)) return candidate;
     const parent = path.dirname(dir);
     if (parent === dir) return null; // reached filesystem root
@@ -118,7 +128,7 @@ function findProjectConfigPath(cwd = process.cwd()): string | null {
 }
 
 export function credentialsPath(): string {
-  return path.join(os.homedir(), ".memfork", "credentials.json");
+  return path.join(os.homedir(), '.memfork', 'credentials.json');
 }
 
 // ─── Read helpers ─────────────────────────────────────────────────────────────
@@ -127,7 +137,7 @@ export function readProjectConfig(cwd = process.cwd()): ProjectConfig | null {
   const p = findProjectConfigPath(cwd);
   if (!p) return null;
   try {
-    return JSON.parse(fs.readFileSync(p, "utf8")) as ProjectConfig;
+    return JSON.parse(fs.readFileSync(p, 'utf8')) as ProjectConfig;
   } catch {
     return null;
   }
@@ -137,7 +147,7 @@ export function readCredentials(): CredentialsFile {
   const p = credentialsPath();
   if (!fs.existsSync(p)) return { trees: {} };
   try {
-    return JSON.parse(fs.readFileSync(p, "utf8")) as CredentialsFile;
+    return JSON.parse(fs.readFileSync(p, 'utf8')) as CredentialsFile;
   } catch {
     return { trees: {} };
   }
@@ -145,17 +155,24 @@ export function readCredentials(): CredentialsFile {
 
 // ─── Write helpers ────────────────────────────────────────────────────────────
 
-export function writeProjectConfig(cfg: ProjectConfig, cwd = process.cwd()): void {
+export function writeProjectConfig(
+  cfg: ProjectConfig,
+  cwd = process.cwd(),
+): void {
   const root = findGitRoot(cwd) ?? cwd;
-  const dir  = path.join(root, ".memfork");
+  const dir = path.join(root, '.memfork');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(root, ".memfork", "config.json"), JSON.stringify(cfg, null, 2) + "\n", "utf8");
+  fs.writeFileSync(
+    path.join(root, '.memfork', 'config.json'),
+    JSON.stringify(cfg, null, 2) + '\n',
+    'utf8',
+  );
 }
 
 function findGitRoot(cwd: string): string | null {
   let dir = cwd;
   while (true) {
-    if (fs.existsSync(path.join(dir, ".git"))) return dir;
+    if (fs.existsSync(path.join(dir, '.git'))) return dir;
     const parent = path.dirname(dir);
     if (parent === dir) return null;
     dir = parent;
@@ -163,10 +180,10 @@ function findGitRoot(cwd: string): string | null {
 }
 
 export function writeCredentials(creds: CredentialsFile): void {
-  const dir = path.join(os.homedir(), ".memfork");
+  const dir = path.join(os.homedir(), '.memfork');
   fs.mkdirSync(dir, { recursive: true });
   const p = credentialsPath();
-  fs.writeFileSync(p, JSON.stringify(creds, null, 2) + "\n", "utf8");
+  fs.writeFileSync(p, JSON.stringify(creds, null, 2) + '\n', 'utf8');
   // 600: owner read+write only — no other users can read private keys.
   fs.chmodSync(p, 0o600);
 }
@@ -189,7 +206,7 @@ export function setDefaultTree(treeId: string): void {
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "ConfigError";
+    this.name = 'ConfigError';
   }
 }
 
@@ -197,38 +214,32 @@ export class ConfigError extends Error {
  * Resolve the full config for a single tree, merging all three layers.
  * Throws `ConfigError` with a human-readable message if anything is missing.
  */
-export function resolveConfig(opts: { treeId?: string; cwd?: string } = {}): ResolvedConfig {
+export function resolveConfig(
+  opts: { treeId?: string; cwd?: string } = {},
+): ResolvedConfig {
   const project = readProjectConfig(opts.cwd);
-  const creds   = readCredentials();
-  const env     = process.env;
+  const creds = readCredentials();
+  const env = process.env;
 
   // ── Resolve treeId ──────────────────────────────────────────────────────────
   const treeId =
-    env["MEMFORK_TREE_ID"]   ??
-    opts.treeId              ??
-    project?.treeId          ??
-    creds.default;
+    env['MEMFORK_TREE_ID'] ?? opts.treeId ?? project?.treeId ?? creds.default;
 
   if (!treeId) {
     throw new ConfigError(
-      "No MemoryTree found. Run `memfork init` to create or link one.",
+      'No MemoryTree found. Run `memfork init` to create or link one.',
     );
   }
 
   // ── Resolve credentials ────────────────────────────────────────────────────
   const stored = creds.trees[treeId];
 
-  const privateKey =
-    env["MEMFORK_PRIVATE_KEY"] ??
-    stored?.privateKey;
+  const privateKey = env['MEMFORK_PRIVATE_KEY'] ?? stored?.privateKey;
 
   const memwalAccountId =
-    env["MEMFORK_MEMWAL_ACCOUNT"] ??
-    stored?.memwalAccountId;
+    env['MEMFORK_MEMWAL_ACCOUNT'] ?? stored?.memwalAccountId;
 
-  const memwalKey =
-    env["MEMFORK_MEMWAL_KEY"] ??
-    stored?.memwalKey;
+  const memwalKey = env['MEMFORK_MEMWAL_KEY'] ?? stored?.memwalKey;
 
   if (!privateKey) {
     throw new ConfigError(
@@ -247,11 +258,9 @@ export function resolveConfig(opts: { treeId?: string; cwd?: string } = {}): Res
   }
 
   // ── Merge non-secret config ────────────────────────────────────────────────
-  const network = (
-    env["MEMFORK_NETWORK"]   ??
-    project?.network         ??
-    "mainnet"
-  ) as ResolvedConfig["network"];
+  const network = (env['MEMFORK_NETWORK'] ??
+    project?.network ??
+    'mainnet') as ResolvedConfig['network'];
 
   return {
     treeId,
@@ -259,14 +268,16 @@ export function resolveConfig(opts: { treeId?: string; cwd?: string } = {}): Res
     memwalAccountId,
     memwalKey,
     memwalRelayer:
-      env["MEMFORK_RELAYER_URL"] ??
+      env['MEMFORK_RELAYER_URL'] ??
       stored?.memwalRelayer ??
       defaultRelayer(network),
     network,
-    defaultBranch: project?.defaultBranch ?? "main",
-    rpcUrl:      env["MEMFORK_RPC_URL"]      ?? project?.rpcUrl,
-    packageId:   env["MEMFORK_PACKAGE_ID"]   ?? project?.packageId,
-    sponsorUrl:  env["MEMFORK_SPONSOR_URL"]  ?? (project as Record<string, string> | null)?.["sponsorUrl"],
+    defaultBranch: project?.defaultBranch ?? 'main',
+    rpcUrl: env['MEMFORK_RPC_URL'] ?? project?.rpcUrl,
+    packageId: env['MEMFORK_PACKAGE_ID'] ?? project?.packageId,
+    sponsorUrl:
+      env['MEMFORK_SPONSOR_URL'] ??
+      project?.sponsorUrl,
   };
 }
 
@@ -276,16 +287,16 @@ export function resolveConfig(opts: { treeId?: string; cwd?: string } = {}): Res
  */
 export function toClientConfig(r: ResolvedConfig) {
   return {
-    treeId:     r.treeId,
-    signer:     r.privateKey,
-    network:    r.network,
-    rpcUrl:     r.rpcUrl,
-    packageId:  r.packageId,
+    treeId: r.treeId,
+    signer: r.privateKey,
+    network: r.network,
+    rpcUrl: r.rpcUrl,
+    packageId: r.packageId,
     sponsorUrl: r.sponsorUrl,
     memwal: {
-      accountId:   r.memwalAccountId,
+      accountId: r.memwalAccountId,
       delegateKey: r.memwalKey,
-      serverUrl:   r.memwalRelayer,
+      serverUrl: r.memwalRelayer,
     },
   };
 }

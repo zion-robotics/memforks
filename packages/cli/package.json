@@ -1,6 +1,6 @@
 {
   "name": "@memfork/cli",
-  "version": "0.1.17",
+  "version": "0.1.26",
   "description": "MemForks CLI — init, commit, recall, merge, install plugins",
   "repository": {
     "type": "git",
@@ -21,7 +21,7 @@
     "./config": "./dist/config.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/copy-plugins.mjs && tsc && node scripts/bundle-ui.mjs",
     "dev": "tsc --watch",
     "start": "node dist/index.js"
   },
@@ -29,11 +29,13 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "plugins",
+    "ui"
   ],
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "@memfork/core": "^0.1.4",
+    "@memfork/core": "^0.1.11",
     "chalk": "^5.6.2",
     "commander": "^15.0.0"
   },
