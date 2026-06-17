@@ -13,6 +13,13 @@ dist/
 *.tsbuildinfo
 .vercel/
 
+# Generated at build time from root plugins/ — single source of truth lives there
+packages/cli/plugins/
+# Internal ops docs — not for public consumption
+RELEASING.md
+# Built visualizer bundled into the CLI at publish time
+packages/cli/ui/
+
 # Secrets — never commit
 .env
 .env.local
