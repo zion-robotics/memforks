@@ -40,7 +40,7 @@ export default function Home() {
     setSeeding(false);
   }
 
-  async function mergeBranch(from) {
+  async function mergeBranch(from: string) {
     setMerging(true);
     setMergeResult('');
     const res = await fetch('/api/merge', {
@@ -53,7 +53,7 @@ export default function Home() {
     setMerging(false);
   }
 
-  function loadTicket(ticket) {
+  function loadTicket(ticket: any) {
     setBranch(ticket.segment);
     setActiveTicket(ticket.id);
     setMessages([{ id: '1', role: 'user', content: ticket.issue }]);
