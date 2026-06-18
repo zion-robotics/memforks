@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,27 +5,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 const TOUR_STEPS = [
   {
     title: 'Welcome to SwarmDesk 👋',
-    content: 'SwarmDesk is an AI-powered customer support dashboard where specialized agents handle different customer segments — each with their own isolated memory branch.',
+    content: 'SwarmDesk is an AI-powered customer support dashboard where specialized agents handle different customer segments — each with their own isolated memory branch on the blockchain.',
     icon: '🧠',
   },
   {
-    title: 'Branch-Aware Memory',
-    content: 'Each segment (Billing, Technical, Enterprise, Onboarding) has its own memory branch powered by MemForks on the Sui blockchain. Agents only know what their branch knows.',
+    title: 'Pick a Segment',
+    content: 'The left sidebar has 5 segments: Company Memory, Billing, Technical, Enterprise, and Onboarding. Click any to switch to that agent. Each agent only knows what its branch knows.',
     icon: '🌿',
   },
   {
     title: 'Ticket Inbox',
-    content: 'Click any ticket in the left sidebar to load a real customer issue. The agent for that segment will automatically respond using its branch memory.',
+    content: 'Real customer tickets are in the sidebar. Click any ticket to load it into the right segment agent. The agent will respond using its branch memory automatically.',
     icon: '🎫',
   },
   {
     title: 'The Magic — Merge',
-    content: 'When an agent learns something valuable, scroll down in the sidebar and click Merge to push that knowledge into Company Memory. Ask the same question before and after — watch it improve!',
+    content: 'Scroll down in the sidebar to find Merge buttons. Merge a segment into Company Memory, then ask the same question again — watch Company Memory give a better, more specific answer.',
     icon: '🔀',
   },
   {
-    title: 'You are ready! 🚀',
-    content: 'Start by clicking Seed Memory (top right), then pick a segment or ticket. Use the chat bubble anytime to ask questions about SwarmDesk.',
+    title: "You're Ready! 🚀",
+    content: 'Start by clicking Seed Memory (top right) to load initial knowledge. Then pick a segment or ticket and start chatting. Use the 💬 button anytime for help.',
     icon: '✅',
   },
 ];
@@ -46,15 +45,15 @@ export function TourModal({ onClose }: { onClose: () => void }) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0 }}
         className="bg-[#050d0d] border border-teal-800/50 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-teal-900/40">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex gap-1">
+        <div className="flex justify-between items-start mb-5">
+          <div className="flex gap-1.5">
             {TOUR_STEPS.map((_, i) => (
               <div key={i} className={`h-1 rounded-full transition-all ${i === step ? 'w-6 bg-teal-400' : 'w-2 bg-teal-900'}`} />
             ))}
           </div>
           <button onClick={onClose} className="text-gray-600 hover:text-gray-400 text-sm">✕</button>
         </div>
-        <div className="text-4xl mb-4">{current.icon}</div>
+        <div className="text-4xl mb-3">{current.icon}</div>
         <h2 className="text-lg font-bold text-white mb-2">{current.title}</h2>
         <p className="text-sm text-gray-400 leading-relaxed mb-6">{current.content}</p>
         <div className="flex gap-3">
@@ -66,11 +65,25 @@ export function TourModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => step === TOUR_STEPS.length - 1 ? onClose() : setStep(step + 1)}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-sm font-semibold hover:from-teal-400 hover:to-cyan-400 transition shadow-lg shadow-teal-900/30">
-            {step === TOUR_STEPS.length - 1 ? 'Start Using SwarmDesk' : 'Next'}
+            {step === TOUR_STEPS.length - 1 ? 'Start Using SwarmDesk' : 'Next →'}
           </button>
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function BubbleCopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button onClick={copy} className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] px-1.5 py-0.5 rounded bg-teal-900/40 text-teal-400 mt-1">
+      {copied ? '✓' : 'Copy'}
+    </button>
   );
 }
 
@@ -103,7 +116,7 @@ export function ChatBubble({ dark }: { dark: boolean }) {
       const data = await res.json();
       setMessages([...newMessages, { role: 'assistant', content: data.text }]);
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Sorry, something went wrong. Try again!' }]);
+      setMessages([...newMessages, { role: 'assistant', content: 'Something went wrong. Try again!' }]);
     }
     setLoading(false);
   }
@@ -111,7 +124,7 @@ export function ChatBubble({ dark }: { dark: boolean }) {
   const d = dark;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 right-6 z-50 flex flex-col items-end gap-3">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -131,12 +144,13 @@ export function ChatBubble({ dark }: { dark: boolean }) {
             </div>
             <div className="h-64 overflow-y-auto p-3 space-y-3">
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${m.role === 'user'
+                <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`group max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${m.role === 'user'
                     ? 'bg-gradient-to-br from-teal-500 to-cyan-500 text-white'
                     : d ? 'bg-teal-900/30 border border-teal-800/40 text-gray-300' : 'bg-teal-50 border border-teal-200/50 text-gray-700'}`}>
                     {m.content}
                   </div>
+                  {m.role === 'assistant' && <BubbleCopyButton text={m.content} />}
                 </div>
               ))}
               {loading && (
