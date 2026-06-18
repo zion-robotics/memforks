@@ -1,9 +1,8 @@
 'use client';
-import { useEffect as useEffectOnce } from 'react';
-import { TourModal, ChatBubble } from './onboarding';
 import { useState, useEffect, useRef } from 'react';
 import { useChat } from 'ai/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TourModal, ChatBubble } from './onboarding';
 
 const SEGMENTS = [
   { id: 'main', label: 'Company Memory', icon: '🏢', gradient: 'from-teal-500 to-cyan-400' },
@@ -25,42 +24,27 @@ function formatMessage(content: string) {
   return (
     <div className="space-y-2">
       {lines.map((line, i) => {
-        // Numbered list
         const numberedMatch = line.match(/^(\d+)[.)\s]\s*(.+)/);
         if (numberedMatch) {
           return (
             <div key={i} className="flex gap-2">
               <span className="font-bold text-teal-400 min-w-[18px]">{numberedMatch[1]}.</span>
-              <span>{formatInline(numberedMatch[2])}</span>
+              <span>{line.replace(/^\d+[.)\s]\s*/, '')}</span>
             </div>
           );
         }
-        // Bullet
         if (line.match(/^[-*•]\s/)) {
           return (
             <div key={i} className="flex gap-2">
               <span className="text-teal-400 mt-1">•</span>
-              <span>{formatInline(line.replace(/^[-*•]\s/, ''))}</span>
+              <span>{line.replace(/^[-*•]\s/, '')}</span>
             </div>
           );
         }
-        // Empty line
         if (!line.trim()) return <div key={i} className="h-1" />;
-        // Normal
-        return <p key={i}>{formatInline(line)}</p>;
+        return <p key={i}>{line}</p>;
       })}
     </div>
-  );
-}
-
-function formatInline(text: string) {
-  const parts = text.split(/\*\*(.+?)\*\*/g);
-  return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? <strong key={i} className="font-semibold">{part}</strong> : part
-      )}
-    </>
   );
 }
 
@@ -85,10 +69,6 @@ export default function Home() {
   const [branch, setBranch] = useState('main');
   const [dark, setDark] = useState(true);
   const [showTour, setShowTour] = useState(false);
-  useEffectOnce(() => {
-    const seen = localStorage.getItem('swarmdesk-tour-seen');
-    if (!seen) { setShowTour(true); localStorage.setItem('swarmdesk-tour-seen', 'true'); }
-  }, []);
   const [seeded, setSeeded] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [merging, setMerging] = useState(false);
@@ -111,18 +91,26 @@ export default function Home() {
   }, [dark]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
+    const seen = localStorage.getItem('swarmdesk-tour-seen');
+    if (!seen) {
+      setShowTour(true);
+      localStorage.setItem('swarmdesk-tour-seen', 'true');
+    }
+  }, []);
 
-  function scrollToBottom() {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
+  }, [messages, isLoading]);
 
   function handleScroll() {
     const el = scrollContainerRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollDown(distanceFromBottom > 100);
+  }
+
+  function scrollToBottom() {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   async function seedBranches() {
@@ -157,14 +145,12 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${d ? 'bg-[#050d0d] text-white' : 'bg-[#f0fafa] text-gray-900'} ${merging ? 'cursor-wait' : ''}`}>
-      {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-20 ${d ? 'bg-teal-500' : 'bg-teal-300'}`} />
         <div className={`absolute top-1/2 -right-40 w-80 h-80 rounded-full blur-3xl opacity-10 ${d ? 'bg-cyan-400' : 'bg-cyan-200'}`} />
         <div className={`absolute bottom-0 left-1/3 w-64 h-64 rounded-full blur-3xl opacity-10 ${d ? 'bg-teal-600' : 'bg-teal-200'}`} />
       </div>
 
-      {/* Header */}
       <header className={`relative z-10 border-b px-6 py-4 flex items-center justify-between backdrop-blur-sm ${d ? 'border-teal-900/40 bg-[#050d0d]/80' : 'border-teal-200/60 bg-white/80'}`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-teal-500/30">S</div>
@@ -185,7 +171,6 @@ export default function Home() {
       </header>
 
       <div className="flex h-[calc(100vh-65px)] relative z-10">
-        {/* Sidebar */}
         <aside className={`w-64 border-r flex flex-col gap-4 p-4 overflow-y-auto ${d ? 'border-teal-900/40 bg-[#050d0d]/60' : 'border-teal-200/60 bg-white/60'} backdrop-blur-sm`}>
           <div>
             <p className={`text-[10px] font-semibold uppercase tracking-widest mb-3 ${d ? 'text-teal-500' : 'text-teal-600'}`}>Segments</p>
@@ -245,7 +230,6 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Chat area */}
         <main className="flex-1 flex flex-col relative">
           <div className={`px-6 py-3 border-b flex items-center gap-3 ${d ? 'border-teal-900/40 bg-[#050d0d]/40' : 'border-teal-200/40 bg-white/40'} backdrop-blur-sm`}>
             <span className={`text-xs px-3 py-1 rounded-full font-semibold bg-gradient-to-r ${seg.gradient} text-white shadow-sm`}>{seg.icon} {seg.label}</span>
@@ -291,13 +275,10 @@ export default function Home() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Scroll to bottom button */}
           <AnimatePresence>
             {showScrollDown && (
               <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
                 onClick={scrollToBottom}
                 className={`absolute bottom-24 right-6 w-9 h-9 rounded-full flex items-center justify-center shadow-lg border transition ${d ? 'bg-[#0a1a1a] border-teal-700/50 text-teal-400 hover:bg-teal-900/40' : 'bg-white border-teal-300 text-teal-600 hover:bg-teal-50'}`}>
                 ↓
@@ -316,15 +297,18 @@ export default function Home() {
           </form>
         </main>
       </div>
+
+      <AnimatePresence>
+        {showTour && <TourModal onClose={() => setShowTour(false)} />}
+      </AnimatePresence>
+      <ChatBubble dark={dark} />
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setShowTour(true)}
+        className={`fixed bottom-6 left-6 z-40 text-xs px-3 py-2 rounded-xl border font-medium transition ${dark ? 'border-teal-800/50 text-teal-400 bg-teal-900/20 hover:bg-teal-900/40' : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'}`}>
+        🗺 Start Tour
+      </motion.button>
     </div>
-    <AnimatePresence>{showTour && <TourModal onClose={() => setShowTour(false)} />}</AnimatePresence>
-    <ChatBubble dark={dark} />
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={() => setShowTour(true)}
-      className={`fixed bottom-6 left-6 z-40 text-xs px-3 py-2 rounded-xl border font-medium transition ${dark ? 'border-teal-800/50 text-teal-400 bg-teal-900/20 hover:bg-teal-900/40' : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'}`}>
-      🗺 Start Tour
-    </motion.button>
   );
 }
