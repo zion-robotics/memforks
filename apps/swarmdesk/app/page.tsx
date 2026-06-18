@@ -75,7 +75,7 @@ export default function Home() {
   const d = dark;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${d ? 'bg-[#050d0d] text-white' : 'bg-[#f0fafa] text-gray-900'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${d ? 'bg-[#050d0d] text-white' : 'bg-[#f0fafa] text-gray-900'} ${merging ? 'cursor-wait' : ''}`}>
       {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-20 ${d ? 'bg-teal-500' : 'bg-teal-300'}`} />
@@ -178,7 +178,7 @@ export default function Home() {
                   whileHover={{ x: 3 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => mergeBranch(s.id)}
-                  disabled={merging}
+                  disabled={merging} style={{cursor: merging ? "not-allowed" : "pointer"}}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all border disabled:opacity-40 ${d ? 'border-teal-900/30 hover:border-teal-600/50 hover:bg-teal-900/20 text-gray-400 hover:text-teal-300' : 'border-teal-200/50 hover:border-teal-400 hover:bg-teal-50 text-gray-500 hover:text-teal-700'}`}>
                   <span>↗</span> Merge {s.label}
                 </motion.button>
