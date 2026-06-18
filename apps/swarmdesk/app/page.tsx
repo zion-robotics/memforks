@@ -1,4 +1,6 @@
 'use client';
+import { useEffect as useEffectOnce } from 'react';
+import { TourModal, ChatBubble } from './onboarding';
 import { useState, useEffect, useRef } from 'react';
 import { useChat } from 'ai/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -82,6 +84,11 @@ function CopyButton({ text, isUser }: { text: string; isUser: boolean }) {
 export default function Home() {
   const [branch, setBranch] = useState('main');
   const [dark, setDark] = useState(true);
+  const [showTour, setShowTour] = useState(false);
+  useEffectOnce(() => {
+    const seen = localStorage.getItem('swarmdesk-tour-seen');
+    if (!seen) { setShowTour(true); localStorage.setItem('swarmdesk-tour-seen', 'true'); }
+  }, []);
   const [seeded, setSeeded] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [merging, setMerging] = useState(false);
@@ -310,5 +317,14 @@ export default function Home() {
         </main>
       </div>
     </div>
+    <AnimatePresence>{showTour && <TourModal onClose={() => setShowTour(false)} />}</AnimatePresence>
+    <ChatBubble dark={dark} />
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => setShowTour(true)}
+      className={`fixed bottom-6 left-6 z-40 text-xs px-3 py-2 rounded-xl border font-medium transition ${dark ? 'border-teal-800/50 text-teal-400 bg-teal-900/20 hover:bg-teal-900/40' : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'}`}>
+      🗺 Start Tour
+    </motion.button>
   );
 }
